@@ -71,6 +71,12 @@
     font-size: 112px; font-weight: 200; font-variant-numeric: tabular-nums; text-shadow: 0 2px 24px rgba(0, 0, 0, .45);
   }
   .count:empty { display: none; }
+  .tip {
+    position: absolute; top: 8px; left: 8px; right: 8px; display: flex; align-items: center; gap: 12px; padding: 0 6px 0 14px;
+    border-radius: 14px; background: rgba(28, 28, 30, .94); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+    font-size: 13px; line-height: 1.4; animation: rise .3s var(--ease-out);
+  }
+  .tip p { flex: 1; margin: 10px 0; }
   .screen-flash { position: fixed; inset: 0; z-index: 30; background: #fff; pointer-events: none; }
   .frame { position: relative; border-radius: var(--radius); overflow: hidden; background: var(--surface); }
   #view { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity .5s var(--ease-out), filter .3s var(--ease-out); }
@@ -293,11 +299,11 @@
 
   @media (prefers-reduced-transparency: reduce) {
     .panel { background: #1e1e20; -webkit-backdrop-filter: none; backdrop-filter: none; }
-    .q, .pill-hud { background: rgba(0, 0, 0, .8); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .q, .pill-hud, .tip { background: rgba(0, 0, 0, .8); -webkit-backdrop-filter: none; backdrop-filter: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::after { transition-duration: .01ms !important; }
-    .rec i, .qpanel { animation: none; }
+    .rec i, .qpanel, .tip { animation: none; }
   }
 </style>
 </head>
@@ -361,6 +367,7 @@
       <button class="pill" id="retry">Try again</button>
     </div>
     <div class="count" id="count" aria-live="assertive"></div>
+    <div class="tip" id="tip" role="status" hidden><p id="tipText"></p><button class="text-btn" id="tipOk">OK</button></div>
   </div>
   <div class="tray">
     <p class="cam-name" id="camName" aria-live="polite"></p>
@@ -1018,6 +1025,9 @@ const kelvinWb = k => [(k / 5500) ** .3, 1, (5500 / k) ** .45];
 const LEAKS = { off: 0, normal: 1, strong: 1.8 };
 let ev = 0, focal = MAIN, wbK = 0, lensKind = 'none'; // wbK 0 is auto
 let lensId = null, ultraId = null; // the ultra-wide camera in use, and the one the browser offers
+let zoomMin = 1, zoomNow = 1;      // other phones reach their ultra-wide by zooming the camera below 1x
+// The widest this phone can go. Switching to the ultra-wide camera restarts it, which a recording can't do.
+const widestFocal = (recording = !!rec) => zoomMin < 1 ? MAIN * zoomMin : lensId || (ultraId && !recording) ? WIDE : MAIN;
 
 // src is the camera, or an imported photo drawn on a canvas.
 // shift nudges the crop sideways (the 3D camera's lenses); a fixed seed keeps grain still across a long exposure.
@@ -1200,6 +1210,21 @@ function showStatus(e) {
   $('retry').hidden = e.name === 'InsecureContext' || e.name === 'NoWebGL';
 }
 
+// Whether the camera permission sticks is the browser's call, not the page's. When this one won't remember, say once how to make it.
+let tipChecked = false;
+async function permissionTip() {
+  if (tipChecked) return;
+  tipChecked = true;
+  try { if (localStorage.getItem('permTip')) return; } catch { return; }
+  try { if ((await navigator.permissions.query({ name: 'camera' })).state === 'granted') return; } catch {} // no answer: assume it asks again
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Mac/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const homeScreen = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  $('tipText').textContent = !ios ? 'Your browser will ask for the camera again next time. To stop that, set Camera to Allow in this site’s settings.'
+    : homeScreen ? 'Your iPhone may ask for the camera again next time. To stop that, open Settings, then Safari, then Camera, and choose Allow.'
+    : 'Safari will ask for the camera again next time. To stop that, tap aA in the address bar, then Website Settings, and set Camera to Allow.';
+  $('tip').hidden = false;
+}
+
 function stop() {
   endCount();
   if (rec) stopRecording();
@@ -1224,10 +1249,15 @@ async function start() {
     mirror = (s.getVideoTracks()[0].getSettings().facingMode || 'user') === 'user';
     await video.play();
     showStatus(null);
+    permissionTip();
+    const zoom = s.getVideoTracks()[0].getCapabilities?.().zoom;
+    zoomMin = zoom?.min < 1 ? zoom.min : 1;
+    zoomNow = 1;
     const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
     flip.style.visibility = cams.length > 1 ? '' : 'hidden';
-    // shortcut: found by name (iPhone calls it "Back Ultra Wide Camera"); phones that don't name it get no 13mm.
-    ultraId = mirror ? null : cams.find(d => /ultra ?wide/i.test(d.label))?.deviceId ?? null;
+    // shortcut: found by name (iPhone calls it "Back Ultra Wide Camera"). A phone that neither names it nor zooms below 1x stays at 26mm.
+    ultraId = mirror || zoomMin < 1 ? null : cams.find(d => /ultra ?wide/i.test(d.label))?.deviceId ?? null;
+    applyZoom(); // back from the background: put the zoom where it was
     syncDials();
   } catch (e) {
     if (token !== startToken) return;
@@ -1385,14 +1415,22 @@ const spread = () => { const [a, b] = fingers.values(); return Math.hypot(a[0] -
 let lensTimer = 0;
 function setFocal(mm) {
   if (busy) return; // a burst or long exposure keeps its framing
-  // A clip can't change lens mid-recording, so the zoom stays within the lens in use.
-  focal = clamp(mm, (ultraId && !rec) || lensId ? WIDE : MAIN, MAX_FOCAL);
+  focal = clamp(mm, widestFocal(), MAX_FOCAL);
+  applyZoom();
   syncDials();
   setHud(`${Math.round(focal)}mm`);
   clearTimeout(zoomHud);
   zoomHud = setTimeout(showPending, 900);
   clearTimeout(lensTimer);
   lensTimer = setTimeout(matchLens, 300); // once the fingers settle, not on every move
+}
+
+// Below 1x on a camera that zooms out: the phone does it in hardware, so it stays sharp and needs no restart.
+function applyZoom() {
+  const z = +clamp(focal / MAIN, zoomMin, 1).toFixed(2);
+  if (zoomMin >= 1 || z === zoomNow) return;
+  zoomNow = z;
+  stream?.getVideoTracks()[0].applyConstraints({ advanced: [{ zoom: z }] }).catch(() => {});
 }
 
 // Under 26mm needs the ultra-wide lens; from 26mm up the main lens is sharper than a crop of the wide one.
@@ -1473,10 +1511,15 @@ function syncDials() {
   const mm = Math.round(focal);
   $('qFocalVal').textContent = mm;
   $('qFocal').setAttribute('aria-label', `Focal length ${mm} millimetres. Pinch the viewfinder to zoom`);
-  for (const b of focalButtons) {
-    b.hidden = +b.dataset.mm < MAIN && !ultraId && !lensId;
-    b.setAttribute('aria-pressed', +b.dataset.mm === mm);
+  // The ultra-wide button shows what this phone reaches: 13mm (.5x) on an iPhone, maybe 16mm (.6x) elsewhere.
+  const wide = Math.round(widestFocal(false)), [wideBtn] = focalButtons;
+  wideBtn.hidden = wide >= MAIN;
+  if (+wideBtn.dataset.mm !== wide) {
+    wideBtn.dataset.mm = wide;
+    wideBtn.innerHTML = `${wide}<small>${String(+(wide / MAIN).toFixed(1)).replace(/^0/, '')}x</small>`;
+    wideBtn.setAttribute('aria-label', `${wide} millimetres, ultra-wide`);
   }
+  for (const b of focalButtons) b.setAttribute('aria-pressed', +b.dataset.mm === mm);
   $('wbOut').textContent = wbK ? `${wbK}K` : 'Auto';
   $('wbRange').value = wbK || 5500;
   $('wbAuto').setAttribute('aria-pressed', !wbK);
@@ -2295,7 +2338,7 @@ $('wbRange').oninput = e => { wbK = +e.target.value; syncDials(); };
 $('wbAuto').onclick = () => { wbK = 0; syncDials(); };
 $('wbSun').onclick = () => { wbK = 5500; syncDials(); };
 $('wbBulb').onclick = () => { wbK = 3200; syncDials(); };
-for (const b of focalButtons) b.onclick = () => setFocal(+b.dataset.mm);
+for (const b of focalButtons) b.onclick = () => setFocal(b === focalButtons[0] ? widestFocal() : +b.dataset.mm); // the widest exactly, not its rounded label
 $('import').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const files = [...e.target.files];
@@ -2305,6 +2348,10 @@ $('file').onchange = async e => {
 thumb.onclick = openViewer;
 $('close').onclick = () => closeViewer();
 $('retry').onclick = start;
+$('tipOk').onclick = () => {
+  $('tip').hidden = true;
+  try { localStorage.setItem('permTip', '1'); } catch {}
+};
 document.addEventListener('touchstart', () => {}, { passive: true }); // lets iOS show :active press states
 document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
 view.addEventListener('webglcontextlost', e => { e.preventDefault(); glOk = false; });
