@@ -96,24 +96,57 @@
   .pill-hud:disabled svg { display: none; }
   .rec i { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: blink 1s steps(2, jump-none) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
-  .dials { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: grid; gap: 10px; }
-  .chip {
-    position: relative; height: 30px; min-width: 48px; padding: 0 8px; border-radius: 15px;
-    background: var(--glass); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-    font-size: 11px; font-weight: 700; letter-spacing: .02em; font-variant-numeric: tabular-nums;
-    transition: transform .2s var(--ease-out);
+  /* Quick settings, as in Dazz: buttons along the bottom of the viewfinder each open a panel above the shutter */
+  .quick { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; }
+  .q {
+    position: relative; height: 36px; min-width: 36px; padding: 0 9px; border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(28, 28, 30, .62); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap;
+    transition: transform .2s var(--ease-out), background .2s;
   }
-  .chip::before { content: ""; position: absolute; inset: -7px -4px; } /* a 44px touch target */
-  .chip:active { transform: scale(.92); transition-duration: .05s; }
-  .chip.set { color: var(--accent); }
-  .ev-panel {
-    position: absolute; left: 10px; right: 66px; bottom: 10px; display: flex; align-items: center; gap: 8px;
-    height: 44px; padding: 0 6px 0 14px; border-radius: 22px;
-    background: var(--glass); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  .q::before { content: ""; position: absolute; inset: -4px; } /* a 44px touch target */
+  .q:active { transform: scale(.92); transition-duration: .05s; }
+  .q svg { width: 18px; height: 18px; }
+  .q small { align-self: flex-end; margin: 0 5px 8px -3px; font-size: 8px; font-weight: 800; }
+  .q > :last-child:not(.caret) { margin-left: 2px; }
+  .q.set > svg:not(.caret) { color: var(--accent); }
+  .q .caret, .q.open > :not(.caret) { display: none; }
+  .q.open { background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .q.open .caret { display: block; width: 20px; height: 20px; }
+
+  .tray { display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; height: 88px; min-width: 0; } /* one column the panels can't widen */
+  .tray > * { grid-area: 1 / 1; }
+  .qpanel { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(100%, 380px); animation: rise .3s var(--ease-out); }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  .qbtn {
+    flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-content: center; justify-items: center;
+    background: var(--fill); font-size: 17px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
+    transition: background .2s, color .2s, transform .2s var(--ease-out);
   }
-  .ev-panel input { flex: 1; min-width: 0; accent-color: var(--accent); }
-  .ev-panel output { width: 2.6em; font-size: 12px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-  .ev-panel button { height: 32px; padding: 0 10px; border-radius: 16px; font-size: 12px; font-weight: 600; color: var(--accent); }
+  .qbtn:active { transform: scale(.92); transition-duration: .05s; }
+  .qbtn svg { width: 20px; height: 20px; }
+  .qbtn small { margin-top: 2px; font-size: 9px; font-weight: 700; }
+  .qbtn[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+  .lensbtn { width: 50px; height: 50px; }
+  .qslider { flex: 1; min-width: 0; display: grid; gap: 6px; }
+  .qslider output { justify-self: center; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .range { -webkit-appearance: none; appearance: none; display: block; width: 100%; margin: 0; border-radius: 10px; cursor: pointer; }
+  .range::-webkit-slider-runnable-track { height: 100%; background: none; }
+  .range::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; }
+  .range::-moz-range-track { background: none; }
+  .range:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  #wbRange {
+    height: 44px;
+    background:
+      radial-gradient(circle, rgba(255, 255, 255, .75) 1px, transparent 1.5px) center / 6px 4px repeat-x,
+      linear-gradient(90deg, #5b6bff, #ff9a4d);
+  }
+  #wbRange::-webkit-slider-thumb { width: 24px; height: 24px; margin-top: 10px; border-radius: 50%; background: #111; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .4); }
+  #wbRange::-moz-range-thumb { box-sizing: border-box; width: 24px; height: 24px; border-radius: 50%; background: #111; border: 3px solid #fff; }
+  #evRange { height: 34px; background: var(--fill); }
+  #evRange::-webkit-slider-thumb { width: 12px; height: 28px; margin-top: 3px; border-radius: 6px; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .4); }
+  #evRange::-moz-range-thumb { box-sizing: border-box; width: 12px; height: 28px; border: 0; border-radius: 6px; background: #fff; }
 
   .status { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; padding: 32px; text-align: center; }
   .status svg { width: 40px; height: 40px; margin-bottom: 8px; color: var(--text-2); }
@@ -158,7 +191,7 @@
     .finder { grid-area: 1 / 1 / -1 / 2; }
     .tools { grid-area: 1 / 2; gap: 0; }
     .tool { min-width: 40px; padding: 0 6px; }
-    .cam-name { grid-area: 3 / 2; }
+    .tray { grid-area: 3 / 2; }
     .controls { grid-area: 4 / 2; }
   }
 
@@ -260,11 +293,11 @@
 
   @media (prefers-reduced-transparency: reduce) {
     .panel { background: #1e1e20; -webkit-backdrop-filter: none; backdrop-filter: none; }
-    .chip, .pill-hud, .ev-panel { background: rgba(0, 0, 0, .8); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .q, .pill-hud { background: rgba(0, 0, 0, .8); -webkit-backdrop-filter: none; backdrop-filter: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::after { transition-duration: .01ms !important; }
-    .rec i { animation: none; }
+    .rec i, .qpanel { animation: none; }
   }
 </style>
 </head>
@@ -315,15 +348,10 @@
         <button class="pill-hud" id="hud" hidden><span id="hudText"></span><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z"/></svg></button>
         <div class="pill-hud rec" id="rec" role="timer" aria-label="Recording" hidden><i></i><span id="recTime">0:00</span></div>
       </div>
-      <div class="dials">
-        <button class="chip" id="ev" aria-expanded="false">EV</button>
-        <button class="chip" id="focal">28mm</button>
-        <button class="chip" id="wb">AWB</button>
-      </div>
-      <div class="ev-panel" id="evPanel" hidden>
-        <input type="range" id="evRange" min="-2" max="2" step="0.1" value="0" aria-label="Exposure compensation">
-        <output id="evOut" for="evRange">0.0</output>
-        <button id="evReset">Auto</button>
+      <div class="quick">
+        <button class="q" id="qWb" aria-controls="wbPanel" aria-expanded="false"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M180,150.69V56A52,52,0,0,0,76,56v94.69a64,64,0,1,0,104,0ZM128,228a40,40,0,0,1-30.91-65.39,12,12,0,0,0,2.91-7.83V56a28,28,0,0,1,56,0v98.77a12,12,0,0,0,2.77,7.68A40,40,0,0,1,128,228Zm24-40a24,24,0,1,1-36-20.78V92a12,12,0,0,1,24,0v75.22A24,24,0,0,1,152,188Z"/></svg><svg class="caret" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216.49,104.49l-80,80a12,12,0,0,1-17,0l-80-80a12,12,0,0,1,17-17L128,159l71.51-71.52a12,12,0,0,1,17,17Z"/></svg></button>
+        <button class="q" id="qFocal" aria-controls="focalPanel" aria-expanded="false"><span id="qFocalVal">26</span><svg class="caret" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216.49,104.49l-80,80a12,12,0,0,1-17,0l-80-80a12,12,0,0,1,17-17L128,159l71.51-71.52a12,12,0,0,1,17,17Z"/></svg></button>
+        <button class="q" id="qEv" aria-controls="evPanel" aria-expanded="false"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M116,36V20a12,12,0,0,1,24,0V36a12,12,0,0,1-24,0Zm80,92a68,68,0,1,1-68-68A68.07,68.07,0,0,1,196,128Zm-24,0a44,44,0,1,0-44,44A44.05,44.05,0,0,0,172,128ZM51.51,68.49a12,12,0,1,0,17-17l-12-12a12,12,0,0,0-17,17Zm0,119-12,12a12,12,0,0,0,17,17l12-12a12,12,0,1,0-17-17ZM196,72a12,12,0,0,0,8.49-3.51l12-12a12,12,0,0,0-17-17l-12,12A12,12,0,0,0,196,72Zm8.49,115.51a12,12,0,0,0-17,17l12,12a12,12,0,0,0,17-17ZM48,128a12,12,0,0,0-12-12H20a12,12,0,0,0,0,24H36A12,12,0,0,0,48,128Zm80,80a12,12,0,0,0-12,12v16a12,12,0,0,0,24,0V220A12,12,0,0,0,128,208Zm108-92H220a12,12,0,0,0,0,24h16a12,12,0,0,0,0-24Z"/></svg><small id="qEvAuto">A</small><span id="qEvVal">0</span><svg class="caret" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M216.49,104.49l-80,80a12,12,0,0,1-17,0l-80-80a12,12,0,0,1,17-17L128,159l71.51-71.52a12,12,0,0,1,17,17Z"/></svg></button>
       </div>
     </div>
     <div class="status" id="status" role="alert" hidden>
@@ -334,7 +362,26 @@
     </div>
     <div class="count" id="count" aria-live="assertive"></div>
   </div>
-  <p class="cam-name" id="camName" aria-live="polite"></p>
+  <div class="tray">
+    <p class="cam-name" id="camName" aria-live="polite"></p>
+    <div class="qpanel" id="wbPanel" hidden>
+      <div class="qslider"><output id="wbOut" for="wbRange">Auto</output><input class="range" type="range" id="wbRange" min="2000" max="10000" step="10" value="5500" aria-label="White balance in kelvin"></div>
+      <button class="qbtn" id="wbAuto" aria-label="Auto white balance">A</button>
+      <button class="qbtn" id="wbSun" aria-label="Daylight, 5500 kelvin"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M116,36V20a12,12,0,0,1,24,0V36a12,12,0,0,1-24,0Zm80,92a68,68,0,1,1-68-68A68.07,68.07,0,0,1,196,128Zm-24,0a44,44,0,1,0-44,44A44.05,44.05,0,0,0,172,128ZM51.51,68.49a12,12,0,1,0,17-17l-12-12a12,12,0,0,0-17,17Zm0,119-12,12a12,12,0,0,0,17,17l12-12a12,12,0,1,0-17-17ZM196,72a12,12,0,0,0,8.49-3.51l12-12a12,12,0,0,0-17-17l-12,12A12,12,0,0,0,196,72Zm8.49,115.51a12,12,0,0,0-17,17l12,12a12,12,0,0,0,17-17ZM48,128a12,12,0,0,0-12-12H20a12,12,0,0,0,0,24H36A12,12,0,0,0,48,128Zm80,80a12,12,0,0,0-12,12v16a12,12,0,0,0,24,0V220A12,12,0,0,0,128,208Zm108-92H220a12,12,0,0,0,0,24h16a12,12,0,0,0,0-24Z"/></svg></button>
+      <button class="qbtn" id="wbBulb" aria-label="Tungsten, 3200 kelvin"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M180,232a12,12,0,0,1-12,12H88a12,12,0,0,1,0-24h80A12,12,0,0,1,180,232Zm40-128a91.51,91.51,0,0,1-35.17,72.35A12.26,12.26,0,0,0,180,186v2a20,20,0,0,1-20,20H96a20,20,0,0,1-20-20v-2a12,12,0,0,0-4.7-9.51A91.57,91.57,0,0,1,36,104.52C35.73,54.69,76,13.2,125.79,12A92,92,0,0,1,220,104Zm-24,0a68,68,0,0,0-69.65-68C89.56,36.88,59.8,67.55,60,104.38a67.71,67.71,0,0,0,26.1,53.19A35.87,35.87,0,0,1,100,184h56.1A36.13,36.13,0,0,1,170,157.49,67.68,67.68,0,0,0,196,104Zm-20.07-5.32a48.5,48.5,0,0,0-31.91-40,12,12,0,0,0-8,22.62,24.31,24.31,0,0,1,16.09,20,12,12,0,0,0,23.86-2.64Z"/></svg></button>
+    </div>
+    <div class="qpanel" id="focalPanel" hidden>
+      <button class="qbtn lensbtn" data-mm="13" aria-label="13 millimetres, ultra-wide lens" hidden>13<small>.5x</small></button>
+      <button class="qbtn lensbtn" data-mm="26" aria-label="26 millimetres, main lens">26<small>1x</small></button>
+      <button class="qbtn lensbtn" data-mm="35" aria-label="35 millimetres">35</button>
+      <button class="qbtn lensbtn" data-mm="50" aria-label="50 millimetres">50</button>
+    </div>
+    <div class="qpanel" id="evPanel" hidden>
+      <button class="qbtn" id="evReset" aria-label="Reset exposure"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M228,128a100,100,0,0,1-98.66,100H128a99.39,99.39,0,0,1-68.62-27.29,12,12,0,0,1,16.48-17.45,76,76,0,1,0-1.57-109c-.13.13-.25.25-.39.37L54.89,92H72a12,12,0,0,1,0,24H24a12,12,0,0,1-12-12V56a12,12,0,0,1,24,0V76.72L57.48,57.06A100,100,0,0,1,228,128Z"/></svg></button>
+      <button class="qbtn" id="evAuto" aria-label="Auto exposure">A</button>
+      <div class="qslider"><output id="evOut" for="evRange">0.0</output><input class="range" type="range" id="evRange" min="-2" max="2" step="0.1" value="0" aria-label="Exposure compensation"></div>
+    </div>
+  </div>
   <div class="controls">
     <button class="thumb" id="thumb" aria-label="No photos yet" disabled><img alt=""></button>
     <button class="shutter" id="shutter" aria-label="Take photo" disabled></button>
@@ -410,7 +457,7 @@ const $ = id => document.getElementById(id);
 const app = $('app'), finder = $('finder'), frameEl = $('frame'), view = $('view'), ghost = $('ghost');
 const thumb = $('thumb'), shutter = $('shutter'), flip = $('flip'), count = $('count'), screenFlash = $('screenFlash'), camBtn = $('camBtn');
 const viewer = $('viewer'), viewerBg = $('viewerBg'), pager = $('pager'), del = $('del');
-const camSheet = $('camSheet'), setSheet = $('setSheet'), evPanel = $('evPanel');
+const camSheet = $('camSheet'), setSheet = $('setSheet');
 const bars = [...viewer.querySelectorAll('.bar')];
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
@@ -963,10 +1010,14 @@ function cropFor(aspect, sw, sh, mirrored, zoom = 1, shift = 0) {
 const rollFilm = () => [Math.random(), Math.random(), Math.random()];
 let roll = rollFilm();
 
-// Quick dials on the viewfinder: exposure compensation, focal length and white balance.
-const FOCALS = [28, 35, 50], WBS = [['AWB', [1, 1, 1]], ['5500K', [1.08, 1, .88]], ['3200K', [.86, .96, 1.2]]];
+// Quick settings: exposure compensation, focal length and white balance.
+// Focal length zooms freely from 26mm (the main lens) to 104mm; 13mm switches to the ultra-wide lens where there is one.
+const MAIN = 26, WIDE = 13, MAX_FOCAL = 104;
+// Fixing the white balance to k kelvin assumes the light is k: lower turns the picture bluer, higher warmer. 5500K daylight is neutral.
+const kelvinWb = k => [(k / 5500) ** .3, 1, (5500 / k) ** .45];
 const LEAKS = { off: 0, normal: 1, strong: 1.8 };
-let ev = 0, focal = 28, wbMode = 0, lensKind = 'none';
+let ev = 0, focal = MAIN, wbK = 0, lensKind = 'none'; // wbK 0 is auto
+let lensId = null, ultraId = null; // the ultra-wide camera in use, and the one the browser offers
 
 // src is the camera, or an imported photo drawn on a canvas.
 // shift nudges the crop sideways (the 3D camera's lenses); a fixed seed keeps grain still across a long exposure.
@@ -979,7 +1030,9 @@ function draw(t, src = video, { mirrored = mirror, flash = 0, when = stampDate()
   const pictureAspect = view.width * fmt.win[2] / (view.height * fmt.win[3]);
   gl.uniform2f(loc.res, view.width, view.height);
   gl.uniform4fv(loc.win, fmt.win);
-  gl.uniform4fv(loc.crop, cropFor(pictureAspect, src.videoWidth || src.width, src.videoHeight || src.height, mirrored, focal / 28, shift));
+  // shortcut: zoom crops the camera frame, so it softens past about 2x; use the track's zoom constraint where browsers expose it if that matters.
+  const zoom = src === video ? Math.max(1, focal / (lensId ? WIDE : MAIN)) : 1; // imported photos keep their framing
+  gl.uniform4fv(loc.crop, cropFor(pictureAspect, src.videoWidth || src.width, src.videoHeight || src.height, mirrored, zoom, shift));
   gl.uniform1f(loc.edge, fmt.edge);
   gl.uniform1f(loc.edgeR, fmt.round);
   gl.uniform3fv(loc.border, borderOf(f));
@@ -994,7 +1047,7 @@ function draw(t, src = video, { mirrored = mirror, flash = 0, when = stampDate()
   for (const k in DEFAULTS) {
     let v = f[k] ?? DEFAULTS[k];
     if (k === 'exposure') v *= 2 ** ev;
-    else if (k === 'wb') v = v.map((x, i) => x * WBS[wbMode][1][i]);
+    else if (k === 'wb' && wbK) v = v.map((x, i) => x * kelvinWb(wbK)[i]);
     else if (k === 'leak') v *= LEAKS[S.leaks] ?? 1;
     Array.isArray(v) ? gl.uniform3fv(loc[k], v) : gl.uniform1f(loc[k], +v);
   }
@@ -1162,7 +1215,8 @@ async function start() {
   try {
     if (!glOk) throw new DOMException('', 'NoWebGL');
     if (!window.isSecureContext || !navigator.mediaDevices) throw new DOMException('', 'InsecureContext');
-    const s = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1440 } } });
+    const lens = lensId ? { deviceId: { exact: lensId } } : { facingMode: facing };
+    const s = await navigator.mediaDevices.getUserMedia({ audio: false, video: { ...lens, width: { ideal: 1920 }, height: { ideal: 1440 } } });
     // A newer start() won the race, or the app went to the background while the prompt was up.
     if (token !== startToken || document.hidden) return s.getTracks().forEach(t => t.stop());
     stream = video.srcObject = s;
@@ -1172,8 +1226,13 @@ async function start() {
     showStatus(null);
     const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
     flip.style.visibility = cams.length > 1 ? '' : 'hidden';
+    // shortcut: found by name (iPhone calls it "Back Ultra Wide Camera"); phones that don't name it get no 13mm.
+    ultraId = mirror ? null : cams.find(d => /ultra ?wide/i.test(d.label))?.deviceId ?? null;
+    syncDials();
   } catch (e) {
-    if (token === startToken) showStatus(e);
+    if (token !== startToken) return;
+    if (lensId) { lensId = null; focal = MAIN; return start(); } // the ultra-wide wouldn't open: back to the main lens
+    showStatus(e);
   }
 }
 
@@ -1318,39 +1377,113 @@ function stepCamera(dir) {
 }
 
 // Swipe sideways on the viewfinder to change camera; double-tap to switch front and back, like the system camera.
-let touch = null, lastTap = 0;
-finder.addEventListener('pointerdown', e => { touch = e.target.closest('button, input') ? null : { x: e.clientX, y: e.clientY }; });
+// Two fingers pinch to zoom; a mouse wheel or trackpad pinch zooms too.
+let touch = null, lastTap = 0, pinch = null, zoomHud = 0;
+const fingers = new Map();
+const spread = () => { const [a, b] = fingers.values(); return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+
+let lensTimer = 0;
+function setFocal(mm) {
+  if (busy) return; // a burst or long exposure keeps its framing
+  // A clip can't change lens mid-recording, so the zoom stays within the lens in use.
+  focal = clamp(mm, (ultraId && !rec) || lensId ? WIDE : MAIN, MAX_FOCAL);
+  syncDials();
+  setHud(`${Math.round(focal)}mm`);
+  clearTimeout(zoomHud);
+  zoomHud = setTimeout(showPending, 900);
+  clearTimeout(lensTimer);
+  lensTimer = setTimeout(matchLens, 300); // once the fingers settle, not on every move
+}
+
+// Under 26mm needs the ultra-wide lens; from 26mm up the main lens is sharper than a crop of the wide one.
+function matchLens() {
+  const want = ultraId && focal < MAIN ? ultraId : null;
+  if (want === lensId || rec || busy) return;
+  lensId = want;
+  view.classList.add('switching');
+  start();
+}
+
+finder.addEventListener('pointerdown', e => {
+  if (e.target.closest('button, input')) return;
+  finder.setPointerCapture(e.pointerId); // the lift reaches us even off the viewfinder, so no finger gets stuck
+  fingers.set(e.pointerId, [e.clientX, e.clientY]);
+  touch = fingers.size === 1 ? { x: e.clientX, y: e.clientY } : null; // two fingers are a zoom, never a swipe or a tap
+  if (fingers.size === 2) pinch = { spread: Math.max(spread(), 1), focal };
+});
+finder.addEventListener('pointermove', e => {
+  if (!fingers.has(e.pointerId)) return;
+  fingers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pinch && fingers.size === 2) setFocal(pinch.focal * spread() / pinch.spread);
+});
+const lift = e => {
+  fingers.delete(e.pointerId);
+  if (fingers.size < 2) pinch = null;
+};
+finder.addEventListener('pointercancel', lift);
+finder.addEventListener('gesturestart', e => e.preventDefault()); // iOS: pinch zooms the camera, not the page
+finder.addEventListener('wheel', e => {
+  e.preventDefault();
+  const dy = e.deltaY * (e.deltaMode ? 16 : 1); // some browsers scroll in lines
+  setFocal(focal * Math.exp(-dy * (e.ctrlKey ? .01 : .002))); // ctrl is a trackpad pinch: smaller steps, more of them
+}, { passive: false });
 finder.addEventListener('pointerup', e => {
+  lift(e);
   if (!touch || rec || busy) return;
   const dx = e.clientX - touch.x, dy = e.clientY - touch.y;
   touch = null;
   if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) return stepCamera(dx < 0 ? 1 : -1);
   if (Math.hypot(dx, dy) > 10) return;
-  evPanel.hidden = true;
-  $('ev').setAttribute('aria-expanded', false);
+  showPanel();
   if (e.timeStamp - lastTap < 300 && flip.style.visibility !== 'hidden') { lastTap = 0; return switchCamera(); }
   lastTap = e.timeStamp;
 });
 
 function switchCamera() {
   facing = facing === 'user' ? 'environment' : 'user';
+  lensId = null; // the selfie side has no ultra-wide here
+  focal = Math.max(focal, MAIN);
   view.classList.add('switching');
   if (!reduceMotion.matches) flip.firstElementChild.animate([{ transform: 'rotate(-180deg)' }, { transform: 'none' }], spring(.5));
   start();
 }
 
+// One quick-settings panel opens at a time; its button turns into a chevron that closes it, as in Dazz.
+const QUICK = { wb: $('qWb'), focal: $('qFocal'), ev: $('qEv') };
+const focalButtons = [...document.querySelectorAll('.lensbtn')];
+let openPanel = null;
+function showPanel(name = null) {
+  openPanel = name;
+  for (const [k, pill] of Object.entries(QUICK)) {
+    pill.classList.toggle('open', k === name);
+    pill.setAttribute('aria-expanded', k === name);
+    $(`${k}Panel`).hidden = k !== name;
+  }
+  $('camName').hidden = !!name;
+}
+
 function syncDials() {
   const evText = ev ? `${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}` : '0.0';
-  $('ev').textContent = ev ? evText : 'EV';
-  $('ev').classList.toggle('set', ev !== 0);
-  $('ev').setAttribute('aria-label', `Exposure ${evText}`);
+  $('qEvVal').textContent = ev ? evText : '0';
+  $('qEvAuto').hidden = ev !== 0;
+  $('qEv').setAttribute('aria-label', `Exposure ${ev ? evText : 'auto'}`);
   $('evOut').textContent = evText;
-  $('focal').textContent = `${focal}mm`;
-  $('focal').classList.toggle('set', focal !== 28);
-  $('focal').setAttribute('aria-label', `Focal length ${focal} millimetres`);
-  $('wb').textContent = WBS[wbMode][0];
-  $('wb').classList.toggle('set', wbMode > 0);
-  $('wb').setAttribute('aria-label', `White balance ${wbMode ? WBS[wbMode][0] : 'auto'}`);
+  $('evRange').value = ev;
+  $('evAuto').setAttribute('aria-pressed', ev === 0);
+  const mm = Math.round(focal);
+  $('qFocalVal').textContent = mm;
+  $('qFocal').setAttribute('aria-label', `Focal length ${mm} millimetres. Pinch the viewfinder to zoom`);
+  for (const b of focalButtons) {
+    b.hidden = +b.dataset.mm < MAIN && !ultraId && !lensId;
+    b.setAttribute('aria-pressed', +b.dataset.mm === mm);
+  }
+  $('wbOut').textContent = wbK ? `${wbK}K` : 'Auto';
+  $('wbRange').value = wbK || 5500;
+  $('wbAuto').setAttribute('aria-pressed', !wbK);
+  $('wbSun').setAttribute('aria-pressed', wbK === 5500);
+  $('wbBulb').setAttribute('aria-pressed', wbK === 3200);
+  $('qWb').classList.toggle('set', !!wbK);
+  $('qWb').setAttribute('aria-label', `White balance ${wbK ? `${wbK} kelvin` : 'auto'}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -1361,7 +1494,7 @@ const translateY = el => { const t = getComputedStyle(el).transform; return t ==
 
 function openSheet(sheet, opener) {
   sheetOpener = opener;
-  evPanel.hidden = true;
+  showPanel();
   sheet.hidden = false;
   app.inert = true;
   const panel = sheet.querySelector('.panel'), scrim = sheet.querySelector('.scrim');
@@ -1562,6 +1695,7 @@ function setBusy(on) {
 // The pill over the viewfinder: shot progress (tap to cancel) or a short instruction.
 function setHud(text, cancel = false) {
   const h = $('hud');
+  clearTimeout(zoomHud); // a newer message outlives the zoom readout
   h.hidden = !text;
   h.disabled = !cancel;
   $('hudText').textContent = text;
@@ -1817,6 +1951,7 @@ async function stopRecording() {
   mic = null;
   beep(880);
   layout(); // the screen may have turned while recording
+  matchLens(); // the zoom may have crossed lenses while recording
   if (blob.size) await keep(blob, r.name, r.poster);
 }
 
@@ -2153,14 +2288,14 @@ $('date').onclick = () => {
   saveSettings();
   applySettings();
 };
-$('ev').onclick = () => {
-  evPanel.hidden = !evPanel.hidden;
-  $('ev').setAttribute('aria-expanded', !evPanel.hidden);
-};
+for (const [k, pill] of Object.entries(QUICK)) pill.onclick = () => showPanel(openPanel === k ? null : k);
 $('evRange').oninput = e => { ev = +e.target.value; syncDials(); };
-$('evReset').onclick = () => { ev = 0; $('evRange').value = 0; syncDials(); };
-$('focal').onclick = () => { focal = FOCALS[(FOCALS.indexOf(focal) + 1) % FOCALS.length]; syncDials(); };
-$('wb').onclick = () => { wbMode = (wbMode + 1) % WBS.length; syncDials(); };
+$('evReset').onclick = $('evAuto').onclick = () => { ev = 0; syncDials(); };
+$('wbRange').oninput = e => { wbK = +e.target.value; syncDials(); };
+$('wbAuto').onclick = () => { wbK = 0; syncDials(); };
+$('wbSun').onclick = () => { wbK = 5500; syncDials(); };
+$('wbBulb').onclick = () => { wbK = 3200; syncDials(); };
+for (const b of focalButtons) b.onclick = () => setFocal(+b.dataset.mm);
 $('import').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const files = [...e.target.files];
@@ -2192,6 +2327,7 @@ console.assert(cropFor(1, 100, 100, false, 2).join() === '0.25,0.25,0.5,0.5' && 
 console.assert(new Set(CAMERAS.map(f => f.name)).size === CAMERAS.length, 'camera names are unique');
 console.assert(CAMERAS.every(f => ART[f.name] && f.about && GROUPS.some(([g]) => g === f.group)), 'every camera has a drawing, a description and a drawer section');
 console.assert(LENSES.every(([id]) => LENS_ART[id]), 'every lens has a drawing');
+console.assert(kelvinWb(5500).every(v => Math.abs(v - 1) < 1e-9) && kelvinWb(3200)[2] > 1 && kelvinWb(9000)[0] > 1, 'kelvin: 5500K is neutral, lower is bluer, higher is warmer');
 console.assert(CAMERAS.every(f => [false, true].every(l => {
   const { win: [x, y, w, h] } = formatOf(f, l);
   return x >= 0 && y >= 0 && x + w <= 1 + 1e-9 && y + h <= 1 + 1e-9;
